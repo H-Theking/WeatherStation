@@ -5,23 +5,33 @@
  */
 package entitymanagers;
 
-import entities.Location;
 import entities.Sensor;
+import entities.Location;
 import javax.persistence.EntityManager;
+import javax.persistence.EntityManagerFactory;
+import javax.persistence.Persistence;
 import org.junit.Test;
 import static org.junit.Assert.*;
+import org.junit.BeforeClass;
 
 /**
  *
  * @author harvey
  */
 public class SensorManagerTest {
-    SensorManager instance = new SensorManager();
-    String type = "TEMPERATURE";
+    private EntityManagerFactory emf;
+    private EntityManager manager;
+    SensorManager instance;
+    String type = Constants.TYPE.PRESSURE.toString();
     String status = "OFF";
-    
-    public SensorManagerTest() {
+
+    @BeforeClass
+    public void init() {
+        this.emf = Persistence.createEntityManagerFactory("WeatherStationPU");
+        this.manager = emf.createEntityManager();
+        instance = new SensorManager(manager);
     }
+
 
     /**
      * Test of createSensor method, of class SensorManager.

@@ -59,6 +59,9 @@ public class Sensor implements Serializable {
     public Sensor() {
     }
 
+    public Sensor(Integer id) {
+        this.id = id;
+    }
 
     public Sensor(String name, String type, String status) {
         this.name = name;
@@ -68,6 +71,10 @@ public class Sensor implements Serializable {
 
     public Integer getId() {
         return id;
+    }
+
+    public void setId(Integer id) {
+        this.id = id;
     }
 
     public String getName() {

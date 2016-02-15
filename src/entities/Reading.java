@@ -6,15 +6,20 @@
 package entities;
 
 import java.io.Serializable;
+import java.util.Date;
 import javax.persistence.Basic;
 import javax.persistence.Column;
-import javax.persistence.EmbeddedId;
 import javax.persistence.Entity;
+import javax.persistence.GeneratedValue;
+import javax.persistence.GenerationType;
+import javax.persistence.Id;
 import javax.persistence.JoinColumn;
 import javax.persistence.ManyToOne;
 import javax.persistence.NamedQueries;
 import javax.persistence.NamedQuery;
 import javax.persistence.Table;
+import javax.persistence.Temporal;
+import javax.persistence.TemporalType;
 import javax.xml.bind.annotation.XmlRootElement;
 
 /**
@@ -26,47 +31,46 @@ import javax.xml.bind.annotation.XmlRootElement;
 @XmlRootElement
 @NamedQueries({
     @NamedQuery(name = "Reading.findAll", query = "SELECT r FROM Reading r"),
-    @NamedQuery(name = "Reading.findById", query = "SELECT r FROM Reading r WHERE r.readingPK.id = :id"),
-    @NamedQuery(name = "Reading.findBySensorId", query = "SELECT r FROM Reading r WHERE r.readingPK.sensorId = :sensorId"),
+    @NamedQuery(name = "Reading.findById", query = "SELECT r FROM Reading r WHERE r.id = :id"),
     @NamedQuery(name = "Reading.findByReadValue", query = "SELECT r FROM Reading r WHERE r.readValue = :readValue"),
-    @NamedQuery(name = "Reading.findByDate", query = "SELECT r FROM Reading r WHERE r.date = :date")})
+    @NamedQuery(name = "Reading.findByRegDate", query = "SELECT r FROM Reading r WHERE r.regDate = :regDate"),
+    @NamedQuery(name = "Reading.get7DaysReading", query = "SELECT r FROM Reading r WHERE r.sensor = :sensor AND r.regDate BETWEEN :start AND :end")})
 public class Reading implements Serializable {
     private static final long serialVersionUID = 1L;
-    @EmbeddedId
-    protected ReadingPK readingPK;
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Basic(optional = false)
+    @Column(name = "Id")
+    private Integer id;
     @Basic(optional = false)
     @Column(name = "ReadValue")
     private float readValue;
     @Basic(optional = false)
-    @Column(name = "Date")
-    private String date;
-    @JoinColumn(name = "Sensor_Id", referencedColumnName = "Id", insertable = false, updatable = false)
+    @Column(name = "RegDate")
+    @Temporal(TemporalType.TIMESTAMP)
+    private Date regDate;
+    @JoinColumn(name = "Sensor_Id", referencedColumnName = "Id")
     @ManyToOne(optional = false)
     private Sensor sensor;
 
     public Reading() {
     }
 
-    public Reading(ReadingPK readingPK) {
-        this.readingPK = readingPK;
+    public Reading(Integer id) {
+        this.id = id;
     }
 
-    public Reading(ReadingPK readingPK, float readValue, String date) {
-        this.readingPK = readingPK;
+    public Reading(float readValue, Date regDate) {
         this.readValue = readValue;
-        this.date = date;
+        this.regDate = regDate;
     }
 
-    public Reading(int id, int sensorId) {
-        this.readingPK = new ReadingPK(id, sensorId);
+    public Integer getId() {
+        return id;
     }
 
-    public ReadingPK getReadingPK() {
-        return readingPK;
-    }
-
-    public void setReadingPK(ReadingPK readingPK) {
-        this.readingPK = readingPK;
+    public void setId(Integer id) {
+        this.id = id;
     }
 
     public float getReadValue() {
@@ -77,12 +81,12 @@ public class Reading implements Serializable {
         this.readValue = readValue;
     }
 
-    public String getDate() {
-        return date;
+    public Date getRegDate() {
+        return regDate;
     }
 
-    public void setDate(String date) {
-        this.date = date;
+    public void setRegDate(Date regDate) {
+        this.regDate = regDate;
     }
 
     public Sensor getSensor() {
@@ -96,7 +100,7 @@ public class Reading implements Serializable {
     @Override
     public int hashCode() {
         int hash = 0;
-        hash += (readingPK != null ? readingPK.hashCode() : 0);
+        hash += (id != null ? id.hashCode() : 0);
         return hash;
     }
 
@@ -107,7 +111,7 @@ public class Reading implements Serializable {
             return false;
         }
         Reading other = (Reading) object;
-        if ((this.readingPK == null && other.readingPK != null) || (this.readingPK != null && !this.readingPK.equals(other.readingPK))) {
+        if ((this.id == null && other.id != null) || (this.id != null && !this.id.equals(other.id))) {
             return false;
         }
         return true;
@@ -115,7 +119,7 @@ public class Reading implements Serializable {
 
     @Override
     public String toString() {
-        return "entities.Reading[ readingPK=" + readingPK + " ]";
+        return "entities.Reading[ id=" + id + " ]";
     }
     
 }

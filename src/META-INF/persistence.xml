@@ -3,9 +3,9 @@
   <persistence-unit name="WeatherStationPU" transaction-type="RESOURCE_LOCAL">
     <provider>org.eclipse.persistence.jpa.PersistenceProvider</provider>
     <class>entities.Reading</class>
-    <class>entities.Sensor</class>
     <class>entities.Location</class>
     <class>entities.IdGenerator</class>
+    <class>entities.Sensor</class>
     <properties>
       <property name="javax.persistence.jdbc.url" value="jdbc:mysql://localhost:3306/mydb?zeroDateTimeBehavior=convertToNull"/>
       <property name="javax.persistence.jdbc.user" value="root"/>

@@ -5,44 +5,43 @@
  */
 package entitymanagers;
 
-import entities.IdGenerator;
-import entities.Reading;
-import entities.ReadingPK;
 import entities.Sensor;
-import java.sql.Date;
+import entities.Reading;
+import java.util.Date;
 import java.util.List;
 import javax.persistence.EntityManager;
-import javax.persistence.EntityManagerFactory;
-import javax.persistence.Persistence;
 
 /**
  *
  * @author harvey
  */
 public class ReadingManager{
-
-    private final EntityManagerFactory emf;
     private final EntityManager manager;
 
-    public ReadingManager() {
-        this.emf = Persistence.createEntityManagerFactory("WeatherStationPU");
-        this.manager = emf.createEntityManager();
+    public ReadingManager(EntityManager manager) {
+        this.manager = manager;
     }
-    public List<Reading> get7DaysSensorReading(int sensorId, Date start, Date end){
-        return manager.createNamedQuery("Reading.get7DaysReading").setParameter("sensorId", sensorId).
+
+    
+    public List<Reading> get7DaysSensorReading(Sensor sensor, Date start, Date end){
+        return manager.createNamedQuery("Reading.get7DaysReading").setParameter("sensor", sensor).
                 setParameter("start", start).setParameter("end", end).getResultList();
     }
     
-    public void saveReading(int sensorId, float value, Date date){
+    public int saveReading(int sensorId, float value, Date date){
         manager.getTransaction().begin();
-        IdGenerator generator = new IdGenerator();
-        manager.persist(generator);
-        manager.refresh(generator);
-        Reading reading = new Reading(new ReadingPK(sensorId, generator.getId()), 
-                value, date.toString());
         Sensor sensor = manager.find(Sensor.class, sensorId);
-        sensor.getReadingList().add(reading);
+        Reading reading = new Reading(value, date);
+        reading.setSensor(sensor);
+//        sensor.getReadingList().add(reading);
         manager.persist(reading);
+        manager.flush();
         manager.getTransaction().commit();
+        return reading.getId();
     }
+
+    public EntityManager getManager() {
+        return manager;
+    }
+    
 }

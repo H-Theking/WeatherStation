@@ -62,6 +62,10 @@ public class Location implements Serializable {
         return sensorId;
     }
 
+    public void setSensorId(Integer sensorId) {
+        this.sensorId = sensorId;
+    }
+
     public float getLongitude() {
         return longitude;
     }

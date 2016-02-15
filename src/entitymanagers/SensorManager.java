@@ -5,12 +5,10 @@
  */
 package entitymanagers;
 
-import entities.Location;
 import entities.Sensor;
+import entities.Location;
 import javax.persistence.EntityManager;
-import javax.persistence.EntityManagerFactory;
 import javax.persistence.NoResultException;
-import javax.persistence.Persistence;
 
 /**
  *
@@ -18,13 +16,13 @@ import javax.persistence.Persistence;
  */
 public class SensorManager {
 
-    private final EntityManagerFactory emf;
     private final EntityManager manager;
 
-    public SensorManager() {
-        this.emf = Persistence.createEntityManagerFactory("WeatherStationPU");
-        this.manager = emf.createEntityManager();
+    public SensorManager(EntityManager manager) {
+        this.manager = manager;
     }
+
+    
 
     public void createSensor(String name, String type, String status, float lon, float lat) {
         manager.getTransaction().begin();
@@ -35,6 +33,11 @@ public class SensorManager {
         sensor.setLocation(location);
         manager.persist(location);
         manager.getTransaction().commit();
+    }
+    
+    public void createSensor(Sensor sensor){
+        createSensor(sensor.getName(), sensor.getType(), sensor.getStatus(),
+                sensor.getLocation().getLongitude(), sensor.getLocation().getLatitude());
     }
 
     public void editSensorName(String name, String newName) {
