@@ -7,6 +7,9 @@ package entitymanagers;
 
 import entities.Sensor;
 import entities.Location;
+import entitymanagers.Constants.STATUS;
+import entitymanagers.Constants.TYPE;
+import java.util.List;
 import javax.persistence.EntityManager;
 import javax.persistence.NoResultException;
 
@@ -24,7 +27,7 @@ public class SensorManager {
 
     
 
-    public void createSensor(String name, String type, String status, float lon, float lat) {
+    public Sensor createSensor(String name, String type, String status, float lon, float lat) {
         manager.getTransaction().begin();
         Sensor sensor = new Sensor(name, type, status);
         manager.persist(sensor);
@@ -33,19 +36,21 @@ public class SensorManager {
         sensor.setLocation(location);
         manager.persist(location);
         manager.getTransaction().commit();
+        return sensor;
     }
     
-    public void createSensor(Sensor sensor){
-        createSensor(sensor.getName(), sensor.getType(), sensor.getStatus(),
+    public Sensor createSensor(Sensor sensor){
+        return createSensor(sensor.getName(), sensor.getType(), sensor.getStatus(),
                 sensor.getLocation().getLongitude(), sensor.getLocation().getLatitude());
     }
 
-    public void editSensorName(String name, String newName) {
+    public Sensor editSensorName(String name, Sensor sensor) {
         manager.getTransaction().begin();
-        Sensor sensor = findSensorByName(name);
-        sensor.setName(newName);
+//        sensor.setName(sensor.getName());
         manager.merge(sensor);
+        manager.flush();
         manager.getTransaction().commit();
+        return sensor;
     }
 
     public void changeSensorLocation(int sensorId, float lon, float lat) {
@@ -54,30 +59,38 @@ public class SensorManager {
         location.setLatitude(lat);
         location.setLongitude(lon);
         manager.merge(location);
+        manager.flush();
         manager.getTransaction().commit();
     }
 
-    public void switchSensorStatus(String name) {
-        manager.getTransaction().begin();
-        Sensor sensor = findSensorByName(name);
-        if (sensor.getStatus().equals("ON")) {
-            sensor.setStatus("OFF");
+    public void switchSensorStatus(Sensor sensor) {
+//        manager.getTransaction().begin();
+        if (sensor.getStatus().equals(STATUS.ON.toString())) {
+            sensor.setStatus(STATUS.OFF.toString());
         } else {
-            sensor.setStatus("ON");
+            sensor.setStatus(STATUS.ON.toString());
         }
-        manager.merge(sensor);
-        manager.getTransaction().commit();
+//        manager.merge(sensor);
+
+        manager.persist(sensor);
+//        manager.flush();
+//        manager.getTransaction().commit();
     }
 
     public void removeSensor(String name) {
         manager.getTransaction().begin();
-        Sensor sensor = findSensorByName(name);
+        Sensor sensor = findByName(name);
 //        manager.refresh(sensor);
         manager.remove(sensor);
         manager.getTransaction().commit();
     }
+    
+    public List<Sensor> findByType(TYPE type){
+        return manager.createNamedQuery("Sensor.findByType").
+                setParameter("type", type.toString()).getResultList();
+    }
 
-    public Sensor findSensorByName(String name) {
+    public Sensor findByName(String name) {
         try {
             return (Sensor) manager.createNamedQuery("Sensor.findByName").setParameter("name", name).getSingleResult();
         }catch(NoResultException e){

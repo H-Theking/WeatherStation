@@ -140,7 +140,7 @@ public class Sensor implements Serializable {
 
     @Override
     public String toString() {
-        return "entities.Sensor[ id=" + id + " ]";
+        return name;
     }
     
 }

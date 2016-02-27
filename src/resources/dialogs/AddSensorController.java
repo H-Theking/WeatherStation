@@ -10,6 +10,7 @@ import entities.Sensor;
 import entitymanagers.Constants.STATUS;
 import entitymanagers.Constants.TYPE;
 import java.net.URL;
+import java.util.Arrays;
 import java.util.ResourceBundle;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
@@ -54,8 +55,10 @@ public class AddSensorController implements Initializable {
     public void initialize(URL url, ResourceBundle rb) {
         group = new ToggleGroup();
         sensorOn.setToggleGroup(group);
-        sensorOn.setSelected(true);
         sensorOff.setToggleGroup(group);
+        group.selectToggle(sensorOff);
+        
+        type.getItems().addAll(Arrays.asList(TYPE.class.getEnumConstants()));
     }
 
     public void initSensorController(Stage dialogStage, Sensor sensor) {
@@ -68,12 +71,15 @@ public class AddSensorController implements Initializable {
         dialogStage.close();
     }
     
-    private void setSersorUI(){
+    public void populateSersorUI(){
         sensorName.setText(sensor.getName());
         type.getSelectionModel().select(TYPE.valueOf(sensor.getType()));
         longitude.setText(String.valueOf(sensor.getLocation().getLongitude()));
         latitude.setText(String.valueOf(sensor.getLocation().getLatitude()));
         group.selectToggle(sensor.getStatus().equalsIgnoreCase(STATUS.OFF.toString())? sensorOff:sensorOn);
+        
+        //Blur fields
+        type.setDisable(true);
     }
 
     @FXML
@@ -84,7 +90,8 @@ public class AddSensorController implements Initializable {
              sensor.setLocation(new Location());
              sensor.getLocation().setLatitude(Float.parseFloat(latitude.getText()));
              sensor.getLocation().setLongitude(Float.parseFloat(longitude.getText()));
-             sensor.setStatus(group.getSelectedToggle().getUserData().toString());
+             sensor.setStatus(((RadioButton)group.getSelectedToggle()).getText().equals("On")?
+                     STATUS.ON.toString():STATUS.OFF.toString());
              okClicked = true;
              dialogStage.close();
          }
@@ -100,6 +107,11 @@ public class AddSensorController implements Initializable {
         if (sensorName.getText() == null || sensorName.getText().length() == 0) {
             errorMessage += "No valid name!\n";
         }
+        
+        if (type.getSelectionModel().getSelectedItem() == null) {
+            errorMessage += "No sensor type selected\n";
+        }
+        
         if (latitude.getText() == null || latitude.getText().length() == 0) {
             errorMessage += "No valid latitude!\n";
         } else {
@@ -115,7 +127,7 @@ public class AddSensorController implements Initializable {
             try {
                 Double.parseDouble(longitude.getText());
             } catch (NumberFormatException e) {
-                errorMessage += "Latitude ust be a floating point number!\n";
+                errorMessage += "Latitude must be a floating point number!\n";
             }
         }
 

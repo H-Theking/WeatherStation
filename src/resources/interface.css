@@ -3,5 +3,11 @@
  */
 
 .mainFxmlClass {
-
+    
+}
+.toggle-button:enabled{
+    -fx-color: #FF0000
+}
+.toggle-button:selected{
+    -fx-color: #00FF00;
 }

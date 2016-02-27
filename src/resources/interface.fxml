@@ -23,21 +23,15 @@
 <?import javafx.scene.layout.RowConstraints?>
 <?import javafx.scene.text.Font?>
 
-<BorderPane maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="500.0" prefWidth="800.0" xmlns="http://javafx.com/javafx/8.0.65" xmlns:fx="http://javafx.com/fxml/1" fx:controller="weatherstation.InterfaceController">
+<BorderPane maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="500.0" prefWidth="800.0" stylesheets="@interface.css" xmlns="http://javafx.com/javafx/8.0.65" xmlns:fx="http://javafx.com/fxml/1" fx:controller="weatherstation.InterfaceController">
    <top>
       <MenuBar BorderPane.alignment="CENTER">
         <menus>
           <Menu mnemonicParsing="false" text="File">
             <items>
                   <MenuItem mnemonicParsing="false" onAction="#addSensor" text="Add Sensor" />
-              <MenuItem mnemonicParsing="false" onAction="#exitApp" text="Close" />
-            </items>
-          </Menu>
-          <Menu mnemonicParsing="false" text="Edit">
-            <items>
-                  <MenuItem mnemonicParsing="false" onAction="#editSensor" text="Modify Sensor" />
-              <MenuItem mnemonicParsing="false" onAction="#removeSensor" text="Remove" />
                   <MenuItem mnemonicParsing="false" onMenuValidation="#launchSettings" text="Settings" />
+              <MenuItem mnemonicParsing="false" onAction="#exitApp" text="Close" />
             </items>
           </Menu>
           <Menu mnemonicParsing="false" text="Help">
@@ -55,22 +49,22 @@
                <panes>
                   <TitledPane animated="false" text="Humidity Sensors">
                      <content>
-                        <ListView fx:id="humListview" prefHeight="200.0" prefWidth="200.0" />
+                        <ListView fx:id="humListview" onContextMenuRequested="#showContextMenu" prefHeight="200.0" prefWidth="200.0" />
                      </content>
                   </TitledPane>
                   <TitledPane animated="false" text="Pressure Sensors">
                      <content>
-                        <ListView fx:id="pressListView" prefHeight="200.0" prefWidth="200.0" />
+                        <ListView fx:id="pressListView" onContextMenuRequested="#showContextMenu" prefHeight="200.0" prefWidth="200.0" />
                      </content>
                   </TitledPane>
                   <TitledPane animated="false" text="Temperature Sensors">
                      <content>
-                        <ListView fx:id="tempListView" prefHeight="200.0" prefWidth="200.0" />
+                        <ListView fx:id="tempListView" onContextMenuRequested="#showContextMenu" prefHeight="200.0" prefWidth="200.0" />
                      </content>
                   </TitledPane>
                   <TitledPane animated="false" text="Wind Speed Sensors">
                      <content>
-                        <ListView fx:id="speedListView" prefHeight="200.0" prefWidth="200.0" />
+                        <ListView fx:id="speedListView" onContextMenuRequested="#showContextMenu" prefHeight="200.0" prefWidth="200.0" />
                      </content>
                   </TitledPane>
                </panes>
@@ -89,10 +83,10 @@
          <center>
             <LineChart fx:id="lineChart" prefHeight="247.0" prefWidth="519.0" BorderPane.alignment="CENTER">
               <xAxis>
-                <CategoryAxis side="BOTTOM" />
+                <CategoryAxis side="BOTTOM" fx:id="xAxis" />
               </xAxis>
               <yAxis>
-                <NumberAxis side="LEFT" />
+                <NumberAxis fx:id="yAxis" side="LEFT" />
               </yAxis>
             </LineChart>
          </center>
@@ -144,7 +138,7 @@
                   <ColumnConstraints hgrow="NEVER" maxWidth="94.0" minWidth="10.0" prefWidth="90.0" />
                   <ColumnConstraints hgrow="NEVER" maxWidth="133.0" minWidth="10.0" prefWidth="88.0" />
                   <ColumnConstraints hgrow="NEVER" maxWidth="168.0" minWidth="10.0" prefWidth="126.0" />
-                  <ColumnConstraints hgrow="NEVER" maxWidth="251.0" minWidth="10.0" prefWidth="202.0" />
+                  <ColumnConstraints hgrow="NEVER" maxWidth="251.0" minWidth="10.0" prefWidth="190.0" />
                 <ColumnConstraints hgrow="NEVER" maxWidth="171.0" minWidth="10.0" />
               </columnConstraints>
               <rowConstraints>
@@ -157,7 +151,7 @@
                         <Font size="15.0" />
                      </font>
                   </Label>
-                  <ToggleButton contentDisplay="CENTER" mnemonicParsing="false" onAction="#toggleSensorStatus" prefHeight="26.0" prefWidth="52.0" GridPane.columnIndex="1" GridPane.rowIndex="1" />
+                  <ToggleButton fx:id="toggleStateButton" contentDisplay="CENTER" disable="true" mnemonicParsing="false" onAction="#toggleSensorStatus" prefHeight="26.0" prefWidth="52.0" GridPane.columnIndex="1" GridPane.rowIndex="1" />
                   <Label alignment="CENTER" contentDisplay="CENTER" prefHeight="70.0" prefWidth="202.0" text="Current Value" GridPane.columnIndex="4" GridPane.rowIndex="1">
                      <font>
                         <Font size="15.0" />
@@ -168,8 +162,8 @@
                         <Font size="15.0" />
                      </font>
                   </Label>
-                  <DatePicker onAction="#getDataFromDate" prefHeight="26.0" prefWidth="163.0" GridPane.columnIndex="3" GridPane.rowIndex="1" />
-                  <TextField onAction="#setCurrentValue" prefHeight="26.0" prefWidth="77.0" GridPane.columnIndex="5" GridPane.hgrow="NEVER" GridPane.rowIndex="1" />
+                  <DatePicker editable="false" onAction="#getDataFromDate" prefHeight="26.0" prefWidth="163.0" promptText="Select Day" GridPane.columnIndex="3" GridPane.rowIndex="1" />
+                  <TextField editable="false" onAction="#setCurrentValue" prefHeight="26.0" prefWidth="77.0" GridPane.columnIndex="5" GridPane.hgrow="NEVER" GridPane.rowIndex="1" />
                </children>
                <padding>
                   <Insets left="10.0" right="10.0" top="10.0" />

@@ -20,9 +20,9 @@ public class WeatherStation extends Application {
     private static Stage stage;
     @Override
     public void start(Stage primaryStage) throws IOException {
+        stage = primaryStage;
         Parent root = FXMLLoader.load(getClass().getResource("/resources/interface.fxml"));
         Scene scene = new Scene(root);
-        stage = primaryStage;
         primaryStage.setScene(scene);
         primaryStage.show();
     }

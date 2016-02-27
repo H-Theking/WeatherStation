@@ -19,16 +19,16 @@ import org.junit.BeforeClass;
  * @author harvey
  */
 public class SensorManagerTest {
-    private EntityManagerFactory emf;
-    private EntityManager manager;
-    SensorManager instance;
+    private static EntityManagerFactory emf;
+    private static  EntityManager manager;
+    static SensorManager instance;
     String type = Constants.TYPE.PRESSURE.toString();
     String status = "OFF";
 
     @BeforeClass
-    public void init() {
-        this.emf = Persistence.createEntityManagerFactory("WeatherStationPU");
-        this.manager = emf.createEntityManager();
+    public static void init() {
+        SensorManagerTest.emf = Persistence.createEntityManagerFactory("WeatherStationPU");
+        SensorManagerTest.manager = emf.createEntityManager();
         instance = new SensorManager(manager);
     }
 
@@ -43,7 +43,7 @@ public class SensorManagerTest {
         float lon = 0.0F;
         float lat = 0.0F;
         instance.createSensor(name, type, status, lon, lat);
-        Sensor sensor = instance.findSensorByName(name);
+        Sensor sensor = instance.findByName(name);
         assertNotNull(sensor);
     }
 
@@ -57,7 +57,7 @@ public class SensorManagerTest {
         instance.createSensor(name, type, status, 1, 2);
         
         instance.editSensorName(name, newName);
-        Sensor sensor = instance.findSensorByName(newName);
+        Sensor sensor = instance.findByName(newName);
         Location location = instance.getManager().find(Location.class, sensor.getId());
         assertNotNull(sensor);
         assertNotNull(location);
@@ -74,7 +74,7 @@ public class SensorManagerTest {
         instance.createSensor(name, type, status, 8, 5);
         float lon = 5;
         float lat = (float)7.2;
-        Sensor sensor = instance.findSensorByName(name);
+        Sensor sensor = instance.findByName(name);
         instance.changeSensorLocation(sensor.getId(), lon, lat);
         Location location = instance.getManager().find(Location.class, sensor.getId());
         assertNotNull(location);
@@ -90,11 +90,10 @@ public class SensorManagerTest {
         System.out.println("switchSensorStatus");
         String name = "TempSensor4";
         instance.createSensor(name, type, status, 2, 1);
-        Sensor sensor = instance.findSensorByName(name);
+        Sensor sensor = instance.findByName(name);
         Location l = new Location(sensor.getId(), 1, 2);
         String status = "ON";
-        instance.switchSensorStatus(name);
-        sensor = instance.findSensorByName(name);
+        instance.switchSensorStatus(sensor);
         assertEquals(sensor.getStatus(), status);
     }
 
@@ -107,19 +106,19 @@ public class SensorManagerTest {
          String name = "TempSensor5";
         instance.createSensor(name, type, status, 2, 2);
         instance.removeSensor(name);
-        Sensor sensor = instance.findSensorByName(name);
+        Sensor sensor = instance.findByName(name);
         assertNull(sensor);
     }
 
     /**
-     * Test of findSensorByName method, of class SensorManager.
+     * Test of findByName method, of class SensorManager.
      */
 //    @Test
     public void testFindSensorByName() {
         System.out.println("findSensorByName");
         String name = "TempSensor7";
         instance.createSensor(name, type, status, 8, 5);
-        Sensor result = instance.findSensorByName(name);
+        Sensor result = instance.findByName(name);
         assertNotNull(result);
     }
 }

@@ -33,7 +33,9 @@ import javax.xml.bind.annotation.XmlRootElement;
     @NamedQuery(name = "Reading.findAll", query = "SELECT r FROM Reading r"),
     @NamedQuery(name = "Reading.findById", query = "SELECT r FROM Reading r WHERE r.id = :id"),
     @NamedQuery(name = "Reading.findByReadValue", query = "SELECT r FROM Reading r WHERE r.readValue = :readValue"),
-    @NamedQuery(name = "Reading.findByRegDate", query = "SELECT r FROM Reading r WHERE r.regDate = :regDate"),
+    @NamedQuery(name = "Reading.findBySensorAndRegDate", query = "SELECT r FROM Reading r WHERE "
+            + "FUNCTION('Day', FUNCTION('Date', r.regDate)) = :day AND "
+            + "FUNCTION('Month', FUNCTION('Date', r.regDate)) = :month AND r.sensor = :sensor"),
     @NamedQuery(name = "Reading.get7DaysReading", query = "SELECT r FROM Reading r WHERE r.sensor = :sensor AND r.regDate BETWEEN :start AND :end")})
 public class Reading implements Serializable {
     private static final long serialVersionUID = 1L;
@@ -60,9 +62,10 @@ public class Reading implements Serializable {
         this.id = id;
     }
 
-    public Reading(float readValue, Date regDate) {
+    public Reading(float readValue, Date regDate, Sensor sensor) {
         this.readValue = readValue;
         this.regDate = regDate;
+        this.sensor = sensor;
     }
 
     public Integer getId() {

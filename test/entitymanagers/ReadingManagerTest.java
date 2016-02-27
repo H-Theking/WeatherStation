@@ -9,6 +9,11 @@ import entities.Sensor;
 import entities.Reading;
 import entitymanagers.Constants.TYPE;
 import java.sql.Timestamp;
+import java.time.Instant;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.ZoneId;
+import java.util.Calendar;
 import java.util.Date;
 import java.util.List;
 import javax.persistence.EntityManager;
@@ -17,6 +22,7 @@ import javax.persistence.Persistence;
 import org.junit.Test;
 import static org.junit.Assert.*;
 import org.junit.BeforeClass;
+import org.junit.Ignore;
 
 /**
  *
@@ -24,17 +30,17 @@ import org.junit.BeforeClass;
  */
 public class ReadingManagerTest {
 
-    private EntityManagerFactory emf;
-    private EntityManager manager;
-    ReadingManager instance;
-    SensorManager sManager;
-    String type = TYPE.PRESSURE.toString();
-    String status = "OFF";
+    static private EntityManagerFactory emf;
+    static private EntityManager manager;
+    static ReadingManager instance;
+    static SensorManager sManager;
+    static String type = TYPE.PRESSURE.toString();
+    static String status = "OFF";
 
     @BeforeClass
-    public void init() {
-        this.emf = Persistence.createEntityManagerFactory("WeatherStationPU");
-        this.manager = emf.createEntityManager();
+    public static void init() {
+        ReadingManagerTest.emf = Persistence.createEntityManagerFactory("WeatherStationPU");
+        ReadingManagerTest.manager = emf.createEntityManager();
         instance = new ReadingManager(manager);
         sManager = new SensorManager(manager);
     }
@@ -47,11 +53,11 @@ public class ReadingManagerTest {
         System.out.println("get7DaysSensorReading");
         String name = "PressureSensor2";
         sManager.createSensor(name, type, status, 1, 2);
-        Sensor sensor = sManager.findSensorByName(name);
+        Sensor sensor = sManager.findByName(name);
         for (int i = 1; i < 10; i++) {
             float value = (float) i / 10 + 9.54F;
-            Date date = new Date(Timestamp.valueOf(String.format("2015-02-%d 00:00:00", i)).getTime());
-            int id = instance.saveReading(sensor.getId(), value, date);
+            Date date = Timestamp.valueOf(String.format("2015-02-%d 00:00:00", i));
+            instance.saveReading(sensor.getId(), value, date);
         }
 
         List<Reading> expResult = null;
@@ -59,23 +65,49 @@ public class ReadingManagerTest {
                 Timestamp.valueOf("2015-02-2 00:00:00"), Timestamp.valueOf("2015-02-8 00:00:00"));
         assertEquals(result.size(), 7);
 //        assertEquals(expResult, result);
-        // TODO review the generated test code and remove the default call to fail.
+    }
+
+    @Test
+    public void testGetTodaysReadings() {
+        System.out.println("getTodaysReadings");
+        String name = "PressureSensor3";
+        sManager.createSensor(name, type, status, 1, 2);
+        
+        Sensor sensor = sManager.findByName(name);
+        for (int i = 1; i < 10; i++) {
+            float value = (float) i / 10 + 9.54F;
+            Date date = Timestamp.valueOf(LocalDateTime.of(LocalDate.now().getYear(),
+                    LocalDate.now().getMonthValue(), LocalDate.now().getDayOfMonth(),
+                    i, LocalDateTime.now().getMinute()));
+            instance.saveReading(sensor.getId(), value, date);
+        }
+        List<Reading> result = instance.getTodaysReadings(sensor);
+        assertEquals(result.size(), 9);
+        for (int i = 0; i < 9; i++) {
+            Instant instant = Instant.ofEpochMilli(result.get(i).getRegDate().getTime());
+            LocalDateTime datetime = LocalDateTime.ofInstant(instant, ZoneId.systemDefault());
+            assertEquals("Days of the month differ", datetime.getDayOfMonth(), LocalDate.now().getDayOfMonth());
+
+            assertEquals("Month values differ", datetime.getMonth(), LocalDate.now().getMonth());
+            assertEquals("Hours not the same", datetime.getHour(), i + 1);
+        }
     }
 
     /**
      * Test of saveReading method, of class ReadingManager.
      */
     @Test
+    @Ignore
     public void testSaveReading() {
         System.out.println("saveReading");
         String name = "PressureSensor1";
         sManager.createSensor(name, type, status, 1, 2);
-        Sensor sensor = sManager.findSensorByName(name);
+        Sensor sensor = sManager.findByName(name);
         float value = 5.3F;
         Date date = new Date(new Date().getTime());
-        int id = instance.saveReading(sensor.getId(), value, date);
+        Reading saveReading = instance.saveReading(sensor.getId(), value, date);
 //        instance.getManager().f
-        Reading reading = instance.getManager().find(Reading.class, id);
+        Reading reading = instance.getManager().find(Reading.class, saveReading.getId());
         assertNotNull(reading);
 //        Timestamp.
     }
