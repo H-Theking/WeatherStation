@@ -69,8 +69,8 @@
                   <RowConstraints minHeight="10.0" prefHeight="30.0" vgrow="SOMETIMES" />
                </rowConstraints>
                <children>
-                  <RadioButton fx:id="sensorOn" disable="true" mnemonicParsing="false" text="On" />
-                  <RadioButton fx:id="sensorOff" disable="true" mnemonicParsing="false" text="Off" GridPane.columnIndex="1" />
+                  <RadioButton fx:id="sensorOn" mnemonicParsing="false" text="On" />
+                  <RadioButton fx:id="sensorOff" mnemonicParsing="false" text="Off" GridPane.columnIndex="1" />
                </children>
             </GridPane>
          </children>

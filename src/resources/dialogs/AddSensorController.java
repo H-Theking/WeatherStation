@@ -56,7 +56,7 @@ public class AddSensorController implements Initializable {
         group = new ToggleGroup();
         sensorOn.setToggleGroup(group);
         sensorOff.setToggleGroup(group);
-        group.selectToggle(sensorOff);
+        group.selectToggle(sensorOn);
         
         type.getItems().addAll(Arrays.asList(TYPE.class.getEnumConstants()));
     }

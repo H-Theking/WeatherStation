@@ -22,6 +22,7 @@ import java.util.List;
 import java.util.ResourceBundle;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import javafx.application.Platform;
@@ -117,7 +118,18 @@ public class InterfaceController implements Initializable {
     public void initialize(URL url, ResourceBundle rb) {
         primaryStage = WeatherStation.getPrimaryStage();
         primaryStage.setOnCloseRequest((WindowEvent event1) -> {
-            executorService.shutdownNow();
+            try {
+                regUpdateSensors.stream().forEach((thread)->{
+                    thread.stop();
+                });
+                sensorFactory.getThreads().stream().forEach((thread)->{
+                    thread.stop();
+                });
+                executorService.shutdown();
+                executorService.awaitTermination(10, TimeUnit.SECONDS);
+            } catch (InterruptedException ex) {
+                Logger.getLogger(InterfaceController.class.getName()).log(Level.SEVERE, null, ex);
+            }
         });
         ListUpdateListener allListListener = new ListUpdateListener();
         //Register listview listeners
@@ -158,17 +170,17 @@ public class InterfaceController implements Initializable {
                 //Write to database
                 sensor = sensorManager.createSensor(sensor);
                 addSensorToList(sensor);
-//                if (sensor.getStatus().equals(STATUS.ON.toString())) {
-//                    sensor.setStatus(STATUS.OFF.toString());
-//                    //can only be null at application start, which means currentselectedList is null too
-//                    if (previousList == null) {
-//                        setCurrentList(sensor);
-//                        currentSelectedList.getSelectionModel().clearAndSelect(0);
-//                    }
-//                    else{//Is not the first launch, start the thread anyways but dont display
-//                        
-//                    }
-//                }
+                if (sensor.getStatus().equals(STATUS.ON.toString())) {
+                    //can only be null at application start, which means currentselectedList is null too
+                    if (previousList == null) {
+                        startSensorThread(sensor, true);
+                        setCurrentList(sensor);
+                        currentSelectedList.getSelectionModel().select(0);
+                    }
+                    else{//Is not the first launch, start the thread anyways but dont display
+                        startSensorThread(sensor, false);
+                    }
+                }
                 writeInfo("A new sensor " + sensor.getName() + " was created successfully!");
             }
         } catch (IOException ex) {
@@ -218,40 +230,47 @@ public class InterfaceController implements Initializable {
         if (selectedItem.getStatus().equals(STATUS.OFF.toString())) {
             //update sensor status
             sensorManager.switchSensorStatus(selectedItem);
-//            selectedItem.setStatus(STATUS.ON.toString());
+            startSensorThread(selectedItem, true);
+            
+        } else if (selectedItem.getStatus().equals(STATUS.ON.toString())) {
+            //update sensor status
+            sensorManager.switchSensorStatus(selectedItem);
+            //stop reading weather value
+            stopSensorThread(selectedItem);
+        }
+    }
 
-            SensorThread sensorThread = sensorFactory.createSensorThread(selectedItem);
+    private void startSensorThread(Sensor sensor, boolean showOnChart) {
+        SensorThread sensorThread = sensorFactory.createSensorThread(sensor);
             executorService.execute(sensorThread);
             //start updateThread for this sensor if not already started
-            if (regUpdateSensors.isEmpty()) {
-                UpdateThread updateThread = new UpdateThread(selectedItem, 10000);//value to change
+        if (regUpdateSensors.isEmpty()) {//if empty, add first item
+            UpdateThread updateThread = new UpdateThread(sensor, 5000);//value to change
                 updateThread.setIsVisibleOnChart(true);
                 regUpdateSensors.add(updateThread);
                 executorService.execute(updateThread);
-            } else {
+        } else {//find the sensorThread for this sensor if it exists
                 boolean isIn = false;
                 for (UpdateThread thread : regUpdateSensors) {
-                    if (thread.getSensor().equals(selectedItem)) {
+                    if (thread.getSensor().equals(sensor)) {
                         isIn = true;
                         break;
                     }
                 }
-                if (!isIn) {
-                    UpdateThread updateThread = new UpdateThread(selectedItem, 10000);//value to change
-                    updateThread.setIsVisibleOnChart(true);
+            if (!isIn) {//if its not found in the list create an update thread for it
+                UpdateThread updateThread = new UpdateThread(sensor, 5000);//value to change
+                updateThread.setIsVisibleOnChart(showOnChart);
                     regUpdateSensors.add(updateThread);
                     executorService.execute(updateThread);
                 }
             }
-        } else if (selectedItem.getStatus().equals(STATUS.ON.toString())) {
-            //update sensor status
-            sensorManager.switchSensorStatus(selectedItem);
-//            selectedItem.setStatus(STATUS.OFF.toString());
-            //stop reading weather value
-            sensorFactory.interruptThread(selectedItem);
+    }
+    
+    public void stopSensorThread(Sensor sensor){
+        sensorFactory.interruptThread(sensor);
 
             for (UpdateThread thread : regUpdateSensors) {
-                if (thread.getSensor().equals(selectedItem)) {
+                if (thread.getSensor().equals(sensor)) {
                     //stop updating chart and database
                     thread.setIsAlive(false);
                     thread.stop();
@@ -259,11 +278,6 @@ public class InterfaceController implements Initializable {
                     break;
                 }
             }
-        }
-    }
-
-    private void startSensorThread(Sensor sensor) {
-
     }
 
     @FXML
@@ -404,23 +418,7 @@ public class InterfaceController implements Initializable {
             }
             System.out.println(" new: " + newValue.getName());
             toggleStateButton.setSelected(newValue.getStatus().equals(STATUS.ON.toString()));
-            switch (TYPE.valueOf(newValue.getType())) {
-                case HUMIDITY:
-                    currentSelectedList = humListview;
-                    yAxis.setLabel("Humidity(%)");
-                    break;
-                case PRESSURE:
-                    currentSelectedList = pressListView;
-                    yAxis.setLabel("Pressure(mb)");
-                    break;
-                case TEMPERATURE:
-                    currentSelectedList = tempListView;
-                    yAxis.setLabel("Temperature(°c)");
-                    break;
-                default:
-                    currentSelectedList = speedListView;
-                    yAxis.setLabel("Wind(mph)");
-            }
+            setCurrentList(newValue);
 
             if (!currentSelectedList.equals(previousList)) {
                 if (previousList != null) {
@@ -438,7 +436,7 @@ public class InterfaceController implements Initializable {
             } else {
                 regUpdateSensors.stream().forEach((thread) -> {
                     if (thread.getSensor().equals(oldValue)) {
-                        thread.setIsAlive(false);
+                        thread.setIsVisibleOnChart(false);
                     } else if (thread.getSensor().getName().equals(newValue.getName())) {
                         thread.setIsVisibleOnChart(true);
                     }
