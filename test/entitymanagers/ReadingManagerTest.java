@@ -7,7 +7,7 @@ package entitymanagers;
 
 import entities.Sensor;
 import entities.Reading;
-import entitymanagers.Constants.TYPE;
+import constants.StatusType.Type;
 import java.sql.Timestamp;
 import java.time.Instant;
 import java.time.LocalDate;
@@ -34,7 +34,7 @@ public class ReadingManagerTest {
     static private EntityManager manager;
     static ReadingManager instance;
     static SensorManager sManager;
-    static String type = TYPE.PRESSURE.toString();
+    static String type = Type.PRESSURE.toString();
     static String status = "OFF";
 
     @BeforeClass

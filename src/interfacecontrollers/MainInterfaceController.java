@@ -3,18 +3,23 @@
  * To change this template file, choose Tools | Templates
  * and open the template in the editor.
  */
-package weatherstation;
+package interfacecontrollers;
 
 import entities.Reading;
 import entities.Sensor;
-import entitymanagers.Constants.STATUS;
-import entitymanagers.Constants.TYPE;
+import constants.StatusType.Status;
+import constants.StatusType.Type;
 import entitymanagers.ReadingManager;
 import entitymanagers.SensorManager;
 import java.io.IOException;
 import java.net.URL;
+import java.sql.Timestamp;
 import java.time.Instant;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.LocalTime;
+import java.time.Month;
+import java.time.YearMonth;
 import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.Date;
@@ -55,17 +60,32 @@ import javafx.stage.WindowEvent;
 import javax.persistence.EntityManager;
 import javax.persistence.EntityManagerFactory;
 import javax.persistence.Persistence;
-import resources.dialogs.AddSensorController;
+import java.util.HashMap;
+import javafx.collections.FXCollections;
+import javafx.geometry.HPos;
+import javafx.geometry.Insets;
+import javafx.geometry.Pos;
+import javafx.scene.control.DatePicker;
+import javafx.scene.control.Label;
+import javafx.scene.control.ScrollPane;
+import javafx.scene.control.Tab;
+import javafx.scene.control.TextField;
+import javafx.scene.layout.GridPane;
+import org.controlsfx.control.spreadsheet.GridBase;
+import org.controlsfx.control.spreadsheet.SpreadsheetCell;
+import org.controlsfx.control.spreadsheet.SpreadsheetCellType;
+import org.controlsfx.control.spreadsheet.SpreadsheetView;
 import threads.SensorThread;
 import threads.SensorFactory;
 import threads.UpdateThread;
+import weatherstation.WeatherStation;
 
 /**
  * FXML Controller class
  *
  * @author harvey
  */
-public class InterfaceController implements Initializable {
+public class MainInterfaceController implements Initializable {
 
     @FXML
     private ListView<Sensor> humListview;
@@ -76,19 +96,19 @@ public class InterfaceController implements Initializable {
     @FXML
     private ListView<Sensor> speedListView;
     @FXML
-    private AnchorPane mondayPane;
+    private Tab mondayPane;
     @FXML
-    private AnchorPane tuesdayPane;
+    private Tab tuesdayPane;
     @FXML
-    private AnchorPane wedPane;
+    private Tab wedPane;
     @FXML
-    private AnchorPane thursPane;
+    private Tab thursPane;
     @FXML
-    private AnchorPane friPane;
+    private Tab friPane;
     @FXML
-    private AnchorPane satPane;
+    private Tab satPane;
     @FXML
-    private AnchorPane sunPane;
+    private Tab sunPane;
     @FXML
     public LineChart<String, Number> lineChart;
     @FXML
@@ -97,39 +117,37 @@ public class InterfaceController implements Initializable {
     private CategoryAxis xAxis;
     @FXML
     private ToggleButton toggleStateButton;
+    @FXML
+    private DatePicker datePicker;
+    @FXML
+    private TextField currentValue;
 
     private final EntityManagerFactory emf;
     private final EntityManager manager;
     private final SensorManager sensorManager;
     public static ReadingManager readingManager;
 
-    private final String dialogPath = "/resources/dialogs/addSensor.fxml";
+    private final String addEditPath = "/resources/dialogs/addSensor.fxml";
+    private final String settingsPath = "/resources/dialogs/settings.fxml";
     private Stage primaryStage;
     public static final SensorFactory sensorFactory = new SensorFactory();
     private final ExecutorService executorService;
     private ListView<Sensor> currentSelectedList, previousList;
     private final List<UpdateThread> regUpdateSensors;
-    public static final Series<String, Number> series = new Series<>();;
+    private List<Tab> panes;
+    public static final Series<String, Number> series = new Series<>();
 
     /**
      * Initializes the controller class.
+     *
+     * @param url
+     * @param rb
      */
     @Override
     public void initialize(URL url, ResourceBundle rb) {
         primaryStage = WeatherStation.getPrimaryStage();
         primaryStage.setOnCloseRequest((WindowEvent event1) -> {
-            try {
-                regUpdateSensors.stream().forEach((thread)->{
-                    thread.stop();
-                });
-                sensorFactory.getThreads().stream().forEach((thread)->{
-                    thread.stop();
-                });
-                executorService.shutdown();
-                executorService.awaitTermination(10, TimeUnit.SECONDS);
-            } catch (InterruptedException ex) {
-                Logger.getLogger(InterfaceController.class.getName()).log(Level.SEVERE, null, ex);
-            }
+            exit();
         });
         ListUpdateListener allListListener = new ListUpdateListener();
         //Register listview listeners
@@ -140,17 +158,41 @@ public class InterfaceController implements Initializable {
 
         xAxis.setLabel("Time");
         lineChart.getData().add(series);
+
+        loadSensor();
+        panes = initTabPane();
+        datePicker.valueProperty().addListener(
+                (ObservableValue<? extends LocalDate> observable, LocalDate oldValue, LocalDate newValue) -> {
+                    System.out.println(newValue);
+                    LocalDateTime date = newValue.minusDays(6).atStartOfDay();
+                    if (currentSelectedList != null) {
+                        List<Reading> weekreadings = readingManager.get7DaysSensorReading(
+                                currentSelectedList.getSelectionModel().getSelectedItem(),
+                                Timestamp.valueOf(date),
+                                Timestamp.valueOf(LocalDateTime.of(newValue, LocalTime.MAX)));
+                        System.out.println(weekreadings.size());
+                        if (weekreadings.isEmpty()) {
+                            panes.stream().forEach((pane) -> {
+                                ((ScrollPane) pane.getContent()).setContent(null);
+                            });
+                            return;
+                        }
+                        showTable(weekreadings);
+                    }
+
+                });
+//        System.out.println(mondayPane);
     }
 
-    public InterfaceController() {
+    public MainInterfaceController() {
         this.emf = Persistence.createEntityManagerFactory("WeatherStationPU");
         executorService = Executors.newCachedThreadPool();
 
         this.manager = emf.createEntityManager();
-        InterfaceController.readingManager = new ReadingManager(manager);
+        MainInterfaceController.readingManager = new ReadingManager(manager);
         this.sensorManager = new SensorManager(manager);
         this.regUpdateSensors = new ArrayList<>();
-        
+
         this.previousList = null;
     }
 
@@ -159,7 +201,7 @@ public class InterfaceController implements Initializable {
         try {
             Sensor sensor = new Sensor();
             FXMLLoader loader = new FXMLLoader();
-            loader.setLocation(WeatherStation.class.getResource(dialogPath));
+            loader.setLocation(WeatherStation.class.getResource(addEditPath));
 
             Stage dialogStage = createDialogStage("Create New Sensor", loader);
             AddSensorController controller = loader.getController();
@@ -170,14 +212,13 @@ public class InterfaceController implements Initializable {
                 //Write to database
                 sensor = sensorManager.createSensor(sensor);
                 addSensorToList(sensor);
-                if (sensor.getStatus().equals(STATUS.ON.toString())) {
+                if (sensor.getStatus().equals(Status.ON.toString())) {
                     //can only be null at application start, which means currentselectedList is null too
                     if (previousList == null) {
                         startSensorThread(sensor, true);
                         setCurrentList(sensor);
                         currentSelectedList.getSelectionModel().select(0);
-                    }
-                    else{//Is not the first launch, start the thread anyways but dont display
+                    } else {//Is not the first launch, start the thread anyways but dont display
                         startSensorThread(sensor, false);
                     }
                 }
@@ -189,11 +230,12 @@ public class InterfaceController implements Initializable {
     }
 
     private void editSensor(Sensor sensor) {
+        //TODO: the update should be general
         try {
 
             String oldName = sensor.getName();
             FXMLLoader loader = new FXMLLoader();
-            loader.setLocation(WeatherStation.class.getResource(dialogPath));
+            loader.setLocation(WeatherStation.class.getResource(addEditPath));
             Stage dialogStage = createDialogStage("Edit Sensor", loader);
             AddSensorController controller = loader.getController();
             controller.initSensorController(dialogStage, sensor);
@@ -210,13 +252,40 @@ public class InterfaceController implements Initializable {
         }
     }
 
+    private void exit() {
+        try {
+            regUpdateSensors.stream().forEach((thread) -> {
+                thread.stop();
+            });
+            sensorFactory.getThreads().stream().forEach((thread) -> {
+                thread.stop();
+            });
+            executorService.shutdown();
+            executorService.awaitTermination(10, TimeUnit.SECONDS);
+        } catch (InterruptedException ex) {
+            Logger.getLogger(MainInterfaceController.class.getName()).log(Level.SEVERE, null, ex);
+        }
+    }
+
     @FXML
     private void exitApp() {
+        exit();
         Platform.exit();
     }
 
     @FXML
     private void launchSettings(Event event) {
+        try {
+            FXMLLoader loader = new FXMLLoader();
+            loader.setLocation(WeatherStation.class.getResource(settingsPath));
+            Stage dialogStage = createDialogStage("Settings", loader);
+            SettingsController controller = loader.getController();
+            HashMap<String, String> settings = new HashMap<>();
+            controller.settingsController(settings, dialogStage);
+            dialogStage.showAndWait();
+        } catch (IOException ex) {
+            Logger.getLogger(MainInterfaceController.class.getName()).log(Level.SEVERE, null, ex);
+        }
     }
 
     @FXML
@@ -227,12 +296,12 @@ public class InterfaceController implements Initializable {
     private void toggleSensorStatus() {
         Sensor selectedItem = currentSelectedList.getSelectionModel().getSelectedItem();
 
-        if (selectedItem.getStatus().equals(STATUS.OFF.toString())) {
+        if (selectedItem.getStatus().equals(Status.OFF.toString())) {
             //update sensor status
             sensorManager.switchSensorStatus(selectedItem);
             startSensorThread(selectedItem, true);
-            
-        } else if (selectedItem.getStatus().equals(STATUS.ON.toString())) {
+
+        } else if (selectedItem.getStatus().equals(Status.ON.toString())) {
             //update sensor status
             sensorManager.switchSensorStatus(selectedItem);
             //stop reading weather value
@@ -240,52 +309,129 @@ public class InterfaceController implements Initializable {
         }
     }
 
+    private void loadSensor() {
+        List<Sensor> sensors = sensorManager.getSensors();
+        System.out.println(sensors.size());
+        sensors.stream().forEach((sensor) -> {
+            switch (sensor.getType()) {
+                case "HUMIDITY":
+                    humListview.getItems().add(sensor);
+                    break;
+                case "PRESSURE":
+                    pressListView.getItems().add(sensor);
+                    break;
+                case "TEMPERATURE":
+                    tempListView.getItems().add(sensor);
+                    break;
+                case "WIND_SPEED":
+                    speedListView.getItems().add(sensor);
+            }
+            startSensorThread(sensor, false);
+        });
+    }
+
     private void startSensorThread(Sensor sensor, boolean showOnChart) {
         SensorThread sensorThread = sensorFactory.createSensorThread(sensor);
-            executorService.execute(sensorThread);
-            //start updateThread for this sensor if not already started
+        executorService.execute(sensorThread);
+        //start updateThread for this sensor if not already started
         if (regUpdateSensors.isEmpty()) {//if empty, add first item
-            UpdateThread updateThread = new UpdateThread(sensor, 5000);//value to change
-                updateThread.setIsVisibleOnChart(true);
-                regUpdateSensors.add(updateThread);
-                executorService.execute(updateThread);
+            UpdateThread updateThread = new UpdateThread(sensor, 5000, currentValue);//value to change
+            updateThread.setIsVisibleOnChart(true);
+            regUpdateSensors.add(updateThread);
+            executorService.execute(updateThread);
         } else {//find the sensorThread for this sensor if it exists
-                boolean isIn = false;
-                for (UpdateThread thread : regUpdateSensors) {
-                    if (thread.getSensor().equals(sensor)) {
-                        isIn = true;
-                        break;
-                    }
-                }
-            if (!isIn) {//if its not found in the list create an update thread for it
-                UpdateThread updateThread = new UpdateThread(sensor, 5000);//value to change
-                updateThread.setIsVisibleOnChart(showOnChart);
-                    regUpdateSensors.add(updateThread);
-                    executorService.execute(updateThread);
-                }
-            }
-    }
-    
-    public void stopSensorThread(Sensor sensor){
-        sensorFactory.interruptThread(sensor);
-
+            boolean isIn = false;
             for (UpdateThread thread : regUpdateSensors) {
                 if (thread.getSensor().equals(sensor)) {
-                    //stop updating chart and database
-                    thread.setIsAlive(false);
-                    thread.stop();
-                    this.regUpdateSensors.remove(thread);
+                    isIn = true;
                     break;
                 }
             }
+            if (!isIn) {//if its not found in the list create an update thread for it
+                UpdateThread updateThread = new UpdateThread(sensor, 5000, currentValue);//value to change
+                updateThread.setIsVisibleOnChart(showOnChart);
+                regUpdateSensors.add(updateThread);
+                executorService.execute(updateThread);
+            }
+        }
     }
 
-    @FXML
-    private void getDataFromDate() {
+    public void stopSensorThread(Sensor sensor) {
+        sensorFactory.interruptThread(sensor);
+
+        for (UpdateThread thread : regUpdateSensors) {
+            if (thread.getSensor().equals(sensor)) {
+                //stop updating chart and database
+                thread.setIsAlive(false);
+                thread.stop();
+                this.regUpdateSensors.remove(thread);
+                break;
+            }
+        }
     }
 
-    @FXML
-    private void setCurrentValue() {
+    private void showTable(List<Reading> readings) {
+        HashMap<Integer, List<Reading>> weekreading = new HashMap<>();
+        for (int i = 0; i < 7; i++) {
+            weekreading.put(i, new ArrayList<>());
+        }
+        readings.stream().forEach((reading) -> {
+            Instant instant = Instant.ofEpochMilli(reading.getRegDate().getTime());
+            LocalDateTime date = LocalDateTime.ofInstant(instant, ZoneId.systemDefault());
+            //dayofweek from 1 to 7
+            weekreading.get(date.getDayOfWeek().getValue() - 1).add(reading);
+        });
+
+        final int rowCount = 2;
+        for (int i = 0; i < 7; i++) {
+            List<Reading> dayReadings = weekreading.get(i);
+            GridPane gridP = new GridPane();
+            gridP.setAlignment(Pos.CENTER);
+            gridP.setGridLinesVisible(true);
+            ((ScrollPane) (panes.get(i)
+                    .getContent()))
+                    .setContent(gridP);
+            Label label = new Label("Time");
+            label.setPadding(new Insets(10, 10, 10, 10));
+            gridP.getChildren().add(label);
+            GridPane.setConstraints(label, 0, 0);
+            label = new Label("Reading");
+            label.setPadding(new Insets(10, 10, 10, 10));
+            gridP.getChildren().add(label);
+            GridPane.setConstraints(label, 0, 1);
+            int count = 1;
+            for (int j = 1; j < dayReadings.size(); j++) {
+                Instant instant = Instant.ofEpochMilli(dayReadings.get(j).getRegDate().getTime());
+                LocalDateTime date = LocalDateTime.ofInstant(instant, ZoneId.systemDefault());
+                label = new Label(date.getHour() + ":" + date.getMinute() + ":" + date.getSecond());
+                label.setPadding(new Insets(10, 10, 10, 10));
+                System.out.println(label);
+                gridP.getChildren().add(label);
+                GridPane.setConstraints(label, j, 0);
+                label = new Label(String.valueOf(dayReadings.get(count).getReadValue()));
+                System.out.println(label);
+                label.setPadding(new Insets(10, 10, 10, 10));
+                gridP.getChildren().add(label);
+                GridPane.setConstraints(label, j, 1);
+                count++;
+            }
+            gridP.getColumnConstraints().stream().forEach((col) -> {
+                col.setMinWidth(100);
+                col.setHalignment(HPos.CENTER);
+            });
+        }
+    }
+
+    private List<Tab> initTabPane() {
+        final List<Tab> panes = new ArrayList<>();
+        panes.add(mondayPane);
+        panes.add(tuesdayPane);
+        panes.add(wedPane);
+        panes.add(thursPane);
+        panes.add(friPane);
+        panes.add(satPane);
+        panes.add(sunPane);
+        return panes;
     }
 
     private Stage createDialogStage(String title, FXMLLoader loader) throws IOException {
@@ -308,7 +454,7 @@ public class InterfaceController implements Initializable {
         alert.setContentText(s);
         alert.showAndWait();
 
-        Logger.getLogger(InterfaceController.class.getName()).log(Level.SEVERE, null, ex);
+        Logger.getLogger(MainInterfaceController.class.getName()).log(Level.SEVERE, null, ex);
     }
 
     private void writeInfo(String message) {
@@ -335,7 +481,7 @@ public class InterfaceController implements Initializable {
     }
 
     private void setCurrentList(Sensor sensor) {
-        switch (TYPE.valueOf(sensor.getType())) {
+        switch (Type.valueOf(sensor.getType())) {
             case HUMIDITY:
                 currentSelectedList = humListview;
                 yAxis.setLabel("Humidity(%)");
@@ -382,11 +528,11 @@ public class InterfaceController implements Initializable {
     }
 
     public void populateGraph(Sensor sensor, LocalDateTime datetime, List<Reading> readings) {
-        //defining the XAxis
-        readings.stream().forEach((read) -> {
-            System.out.print("[" + read.getId() + ":" + read.getReadValue() + "], ");
-        });
-        System.out.println("");
+        //defining the XAxis 
+//        readings.stream().forEach((read) -> {
+//            System.out.print("[" + read.getId() + ":" + read.getReadValue() + "], ");
+//        });
+//        System.out.println("");
 
         lineChart.setTitle(sensor.getName() + " Readings of " + String.format("%d/%d/%d",
                 datetime.getDayOfMonth(), datetime.getMonthValue(), datetime.getYear()));
@@ -417,7 +563,7 @@ public class InterfaceController implements Initializable {
 
             }
             System.out.println(" new: " + newValue.getName());
-            toggleStateButton.setSelected(newValue.getStatus().equals(STATUS.ON.toString()));
+            toggleStateButton.setSelected(newValue.getStatus().equals(Status.ON.toString()));
             setCurrentList(newValue);
 
             if (!currentSelectedList.equals(previousList)) {
@@ -450,7 +596,7 @@ public class InterfaceController implements Initializable {
              Display it under the tabPane approprate table and make that tab selected
              */
 //            read current sensor value(s)for today from database
-            synchronized (InterfaceController.class){
+            synchronized (MainInterfaceController.class) {
                 List<Reading> todaysReadings = readingManager.getTodaysReadings(newValue);
                 populateGraph(newValue, LocalDateTime.now(), todaysReadings);
             }

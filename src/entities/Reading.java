@@ -30,7 +30,7 @@ import javax.xml.bind.annotation.XmlRootElement;
 @Table(name = "Reading")
 @XmlRootElement
 @NamedQueries({
-    @NamedQuery(name = "Reading.findAll", query = "SELECT r FROM Reading r"),
+    @NamedQuery(name = "Reading.findAll", query = "SELECT r FROM Reading r, Sensor s where r.sensor.id = s.id AND s.status <> 'REMOVED'"),
     @NamedQuery(name = "Reading.findById", query = "SELECT r FROM Reading r WHERE r.id = :id"),
     @NamedQuery(name = "Reading.findByReadValue", query = "SELECT r FROM Reading r WHERE r.readValue = :readValue"),
     @NamedQuery(name = "Reading.findBySensorAndRegDate", query = "SELECT r FROM Reading r WHERE "

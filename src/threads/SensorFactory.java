@@ -6,7 +6,7 @@
 package threads;
 
 import entities.Sensor;
-import entitymanagers.Constants.TYPE;
+import constants.StatusType.Type;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -27,7 +27,7 @@ public class SensorFactory {
      * @return the created thread
      */
     public SensorThread createSensorThread(Sensor sensor) {
-        TYPE type = TYPE.valueOf(sensor.getType());
+        Type type = Type.valueOf(sensor.getType());
         SensorThread thread;
         switch (type) {
             case WIND_SPEED:

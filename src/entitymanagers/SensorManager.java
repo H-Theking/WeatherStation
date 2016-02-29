@@ -7,8 +7,8 @@ package entitymanagers;
 
 import entities.Sensor;
 import entities.Location;
-import entitymanagers.Constants.STATUS;
-import entitymanagers.Constants.TYPE;
+import constants.StatusType.Status;
+import constants.StatusType.Type;
 import java.util.List;
 import javax.persistence.EntityManager;
 import javax.persistence.NoResultException;
@@ -25,7 +25,9 @@ public class SensorManager {
         this.manager = manager;
     }
 
-    
+    public List<Sensor> getSensors(){
+        return manager.createNamedQuery("Sensor.findAll").getResultList();
+    }
 
     public Sensor createSensor(String name, String type, String status, float lon, float lat) {
         manager.getTransaction().begin();
@@ -65,10 +67,10 @@ public class SensorManager {
 
     public void switchSensorStatus(Sensor sensor) {
 //        manager.getTransaction().begin();
-        if (sensor.getStatus().equals(STATUS.ON.toString())) {
-            sensor.setStatus(STATUS.OFF.toString());
+        if (sensor.getStatus().equals(Status.ON.toString())) {
+            sensor.setStatus(Status.OFF.toString());
         } else {
-            sensor.setStatus(STATUS.ON.toString());
+            sensor.setStatus(Status.ON.toString());
         }
 //        manager.merge(sensor);
 
@@ -85,7 +87,7 @@ public class SensorManager {
         manager.getTransaction().commit();
     }
     
-    public List<Sensor> findByType(TYPE type){
+    public List<Sensor> findByType(Type type){
         return manager.createNamedQuery("Sensor.findByType").
                 setParameter("type", type.toString()).getResultList();
     }

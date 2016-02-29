@@ -5,6 +5,7 @@
  */
 package entitymanagers;
 
+import constants.StatusType;
 import entities.Sensor;
 import entities.Location;
 import javax.persistence.EntityManager;
@@ -22,7 +23,7 @@ public class SensorManagerTest {
     private static EntityManagerFactory emf;
     private static  EntityManager manager;
     static SensorManager instance;
-    String type = Constants.TYPE.PRESSURE.toString();
+    String type = StatusType.Type.PRESSURE.toString();
     String status = "OFF";
 
     @BeforeClass

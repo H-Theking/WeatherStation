@@ -3,12 +3,12 @@
  * To change this template file, choose Tools | Templates
  * and open the template in the editor.
  */
-package resources.dialogs;
+package interfacecontrollers;
 
 import entities.Location;
 import entities.Sensor;
-import entitymanagers.Constants.STATUS;
-import entitymanagers.Constants.TYPE;
+import constants.StatusType.Status;
+import constants.StatusType.Type;
 import java.net.URL;
 import java.util.Arrays;
 import java.util.ResourceBundle;
@@ -33,7 +33,7 @@ public class AddSensorController implements Initializable {
     @FXML
     private TextField sensorName;
     @FXML
-    private ComboBox<TYPE> type;
+    private ComboBox<Type> type;
     @FXML
     private TextField latitude;
     @FXML
@@ -58,7 +58,7 @@ public class AddSensorController implements Initializable {
         sensorOff.setToggleGroup(group);
         group.selectToggle(sensorOn);
         
-        type.getItems().addAll(Arrays.asList(TYPE.class.getEnumConstants()));
+        type.getItems().addAll(Arrays.asList(Type.class.getEnumConstants()));
     }
 
     public void initSensorController(Stage dialogStage, Sensor sensor) {
@@ -73,10 +73,10 @@ public class AddSensorController implements Initializable {
     
     public void populateSersorUI(){
         sensorName.setText(sensor.getName());
-        type.getSelectionModel().select(TYPE.valueOf(sensor.getType()));
+        type.getSelectionModel().select(Type.valueOf(sensor.getType()));
         longitude.setText(String.valueOf(sensor.getLocation().getLongitude()));
         latitude.setText(String.valueOf(sensor.getLocation().getLatitude()));
-        group.selectToggle(sensor.getStatus().equalsIgnoreCase(STATUS.OFF.toString())? sensorOff:sensorOn);
+        group.selectToggle(sensor.getStatus().equalsIgnoreCase(Status.OFF.toString())? sensorOff:sensorOn);
         
         //Blur fields
         type.setDisable(true);
@@ -91,7 +91,7 @@ public class AddSensorController implements Initializable {
              sensor.getLocation().setLatitude(Float.parseFloat(latitude.getText()));
              sensor.getLocation().setLongitude(Float.parseFloat(longitude.getText()));
              sensor.setStatus(((RadioButton)group.getSelectedToggle()).getText().equals("On")?
-                     STATUS.ON.toString():STATUS.OFF.toString());
+                     Status.ON.toString():Status.OFF.toString());
              okClicked = true;
              dialogStage.close();
          }

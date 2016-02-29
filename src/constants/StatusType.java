@@ -3,29 +3,22 @@
  * To change this template file, choose Tools | Templates
  * and open the template in the editor.
  */
-package entitymanagers;
+package constants;
 
 /**
  *
  * @author harvey
  */
-public class Constants {
+public class StatusType {
 
-    public enum STATUS {
+    public enum Status {
         ON, OFF, REMOVED
     }
     
-    public enum TYPE{
+    public enum Type{
         HUMIDITY,
         TEMPERATURE,
         PRESSURE,
         WIND_SPEED
-    }
-    
-    public enum UNIT{
-        GRAM_PER_CUBIC_METRE,
-        CELSIUS,
-        PASCALS,
-        METRES_PER_SECOND,
     }
 }

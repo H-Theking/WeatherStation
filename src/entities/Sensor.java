@@ -30,7 +30,7 @@ import javax.xml.bind.annotation.XmlTransient;
 @Table(name = "Sensor")
 @XmlRootElement
 @NamedQueries({
-    @NamedQuery(name = "Sensor.findAll", query = "SELECT s FROM Sensor s"),
+    @NamedQuery(name = "Sensor.findAll", query = "SELECT s FROM Sensor s where s.status <> 'REMOVED'"),
     @NamedQuery(name = "Sensor.findById", query = "SELECT s FROM Sensor s WHERE s.id = :id"),
     @NamedQuery(name = "Sensor.findByName", query = "SELECT s FROM Sensor s WHERE s.name = :name"),
     @NamedQuery(name = "Sensor.findByType", query = "SELECT s FROM Sensor s WHERE s.type = :type"),

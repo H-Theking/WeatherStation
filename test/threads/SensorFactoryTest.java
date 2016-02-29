@@ -6,8 +6,8 @@
 package threads;
 
 import entities.Sensor;
-import entitymanagers.Constants.STATUS;
-import entitymanagers.Constants.TYPE;
+import constants.StatusType.Status;
+import constants.StatusType.Type;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
@@ -31,7 +31,7 @@ public class SensorFactoryTest {
     @BeforeClass
     public static void setUpClass() {
         instance = new SensorFactory();
-        sensor = new Sensor("PressSensor", TYPE.PRESSURE.toString(), STATUS.ON.toString());
+        sensor = new Sensor("PressSensor", Type.PRESSURE.toString(), Status.ON.toString());
         expResult = true;
         executorService = Executors.newCachedThreadPool();
     }

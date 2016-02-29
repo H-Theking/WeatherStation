@@ -13,9 +13,10 @@ import java.time.LocalDateTime;
 import java.time.ZoneId;
 import javafx.application.Platform;
 import javafx.scene.chart.XYChart;
-import static weatherstation.InterfaceController.readingManager;
-import static weatherstation.InterfaceController.sensorFactory;
-import static weatherstation.InterfaceController.series;
+import static interfacecontrollers.MainInterfaceController.readingManager;
+import static interfacecontrollers.MainInterfaceController.sensorFactory;
+import static interfacecontrollers.MainInterfaceController.series;
+import javafx.scene.control.TextField;
 
 /**
  *
@@ -26,10 +27,12 @@ public class UpdateThread extends SensorThread {
     private final Sensor sensor;
     public static int updateInterval;
     private boolean isVisibleOnChart;
+    private final TextField currentValue;
     
-    public UpdateThread(Sensor sensor, int interrupt) {
+    public UpdateThread(Sensor sensor, int interrupt, TextField currField) {
         super(sensor);
         this.sensor = sensor;
+        this.currentValue = currField;
         updateInterval = interrupt;
 //        UpdateThread.series = series;
         isVisibleOnChart = false;
@@ -52,6 +55,8 @@ public class UpdateThread extends SensorThread {
     public void addChartData(Reading reading) {
         Instant instant = Instant.ofEpochMilli(reading.getRegDate().getTime());
         LocalDateTime datetime = LocalDateTime.ofInstant(instant, ZoneId.systemDefault());
+        
+        this.currentValue.setText(String.valueOf(reading.getReadValue()));
         series.getData().add(new XYChart.Data(String.format("%2d:%2d:%2d", datetime.getHour(),
                 datetime.getMinute(), datetime.getSecond()), reading.getReadValue()));
     }

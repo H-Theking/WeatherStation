@@ -18,10 +18,11 @@ import javafx.stage.Stage;
  */
 public class WeatherStation extends Application {
     private static Stage stage;
+    private static final String path = "/resources/mainInterface.fxml";
     @Override
     public void start(Stage primaryStage) throws IOException {
         stage = primaryStage;
-        Parent root = FXMLLoader.load(getClass().getResource("/resources/interface.fxml"));
+        Parent root = FXMLLoader.load(getClass().getResource(path));
         Scene scene = new Scene(root);
         primaryStage.setScene(scene);
         primaryStage.show();
@@ -34,7 +35,7 @@ public class WeatherStation extends Application {
         launch(args);
     }
     
-    protected static Stage getPrimaryStage(){
+    public static Stage getPrimaryStage(){
         return stage;
     }
 }
