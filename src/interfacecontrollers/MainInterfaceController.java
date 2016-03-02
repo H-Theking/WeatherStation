@@ -351,6 +351,9 @@ public class MainInterfaceController implements Initializable {
     }
 
     private void startSensorThread(Sensor sensor, boolean showOnChart) {
+        if (sensor.getStatus().equals(Status.OFF.toString())) {
+            return;
+        }
         SensorThread sensorThread = sensorFactory.createSensorThread(sensor);
         executorService.execute(sensorThread);
         //start updateThread for this sensor if not already started
