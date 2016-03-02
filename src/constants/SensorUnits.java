@@ -67,26 +67,28 @@ public class SensorUnits {
         return units;
     }
 
-    public float convertTo(String unit, float value) {
+    public static float convertTo(String unit, float value) {
         switch (unit) {
-            case "FAHRENHEIT":
+            case "fahrenheit":
                 return celciusToFah(value);
-            case "MILES_PER_HOUR":
+            case "miles per hour":
                 return mpsToMph(value);
-            default:
+            case "kilometres per hour":
                 return mpsToKh(value);
+            default:
+                return value;
         }
     }
 
-    private float celciusToFah(float value) {
+    private static float celciusToFah(float value) {
         return value * 9 / 5 + 32;
     }
 
-    private float mpsToMph(float value) {
+    private static float mpsToMph(float value) {
         return value * (float) 2.237;
     }
 
-    private float mpsToKh(float value) {
+    private static float mpsToKh(float value) {
         return value * (float) 3.6;
     }
 }

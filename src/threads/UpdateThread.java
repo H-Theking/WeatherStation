@@ -25,7 +25,7 @@ import javafx.scene.control.TextField;
 public class UpdateThread extends SensorThread {
     
     private final Sensor sensor;
-    public static int updateInterval;
+    private static int updateInterval;
     private boolean isVisibleOnChart;
     private final TextField currentValue;
     
@@ -80,6 +80,10 @@ public class UpdateThread extends SensorThread {
     
     public void setIsVisibleOnChart(boolean isVisibleOnChart) {
         this.isVisibleOnChart = isVisibleOnChart;
+    }
+
+    public static void setUpdateInterval(int updateInterval) {
+        UpdateThread.updateInterval = updateInterval;
     }
     
 }

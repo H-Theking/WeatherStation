@@ -54,10 +54,11 @@ public class SensorManagerTest {
     @Test
     public void testEditSensorName() {
         String name = "TempSensor2";
+        Sensor sensor1 = new Sensor(name, type, status);
         String newName = "TempSensor3";
         instance.createSensor(name, type, status, 1, 2);
         
-        instance.editSensorName(name, newName);
+        instance.editSensorName(name, sensor1);
         Sensor sensor = instance.findByName(newName);
         Location location = instance.getManager().find(Location.class, sensor.getId());
         assertNotNull(sensor);
