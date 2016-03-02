@@ -36,13 +36,13 @@ public class Settings {
     private static Formatter output;
     private static Scanner input;
 
-    public static void openFile(String read) {
+    public static void openFile(String permission) {
 
         try {
             if (System.getProperty("os.name").contains("Windows")) {
                 systemDir = userHomeDir + "\\settings.txt";
             }
-            if (read.equals("read")) {
+            if (permission.equals("read")) {
                 input = new Scanner(Paths.get(systemDir));
             } else {
                 output = new Formatter(systemDir);
@@ -57,10 +57,6 @@ public class Settings {
             try { //create file if not exist
                 output = new Formatter(systemDir);
                 output.format("%s %s ", "interval", "5000");
-                output.format("%s %s ", "humidity", "%");
-                output.format("%s %s ", "pressure", "mB");
-                output.format("%s %s ", "temperature", "°c");
-                output.format("%s %s ", "wind", "m/s");
             } catch (FileNotFoundException ex1) {
                 System.err.println("Error opening file. Terminating.");
                 System.exit(1);
@@ -81,14 +77,11 @@ public class Settings {
         try {
             openFile("write");
             output.format("%s %s ", "interval", settings.get("interval"));
-            output.format("%s %s ", "humidity", settings.get("humidity"));
-            output.format("%s %s ", "pressure", settings.get("pressure"));
-            output.format("%s %s ", "temperature", settings.get("temperature"));
-            output.format("%s %s ", "wind", settings.get("wind"));
-            closeFile();
         } catch (FormatterClosedException formatterClosedException) {
             System.err.println("Error writing to file. Terminating.");
             return false;
+        }finally{
+            closeFile();
         }
         return true;
     } // end method a
@@ -106,6 +99,9 @@ public class Settings {
             System.err.println("File improperly formed. Terminating.");
         } catch (IllegalStateException stateException) {
             System.err.println("Error reading from file. Terminating.");
+        } catch (NullPointerException e) {
+            openFile("write");
+            openFile("read");
         }
         return settings;
 

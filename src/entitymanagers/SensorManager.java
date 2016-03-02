@@ -46,11 +46,12 @@ public class SensorManager {
                 sensor.getLocation().getLongitude(), sensor.getLocation().getLatitude());
     }
 
-    public Sensor editSensorName(String name, Sensor sensor) {
+    public Sensor updateSensor(Sensor sensor) {
         manager.getTransaction().begin();
+        
 //        sensor.setName(sensor.getName());
         manager.merge(sensor);
-        manager.flush();
+//        manager.flush();
         manager.getTransaction().commit();
         return sensor;
     }

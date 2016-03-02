@@ -88,6 +88,7 @@ public class AddSensorController implements Initializable {
              sensor.setName(sensorName.getText());
              sensor.setType(type.getSelectionModel().getSelectedItem().name().toUpperCase());
              sensor.setLocation(new Location());
+             sensor.getLocation().setSensorId(sensor.getId());
              sensor.getLocation().setLatitude(Float.parseFloat(latitude.getText()));
              sensor.getLocation().setLongitude(Float.parseFloat(longitude.getText()));
              sensor.setStatus(((RadioButton)group.getSelectedToggle()).getText().equals("On")?

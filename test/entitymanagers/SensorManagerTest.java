@@ -49,7 +49,7 @@ public class SensorManagerTest {
     }
 
     /**
-     * Test of editSensorName method, of class SensorManager.
+     * Test of updateSensor method, of class SensorManager.
      */
     @Test
     public void testEditSensorName() {
@@ -58,7 +58,7 @@ public class SensorManagerTest {
         String newName = "TempSensor3";
         instance.createSensor(name, type, status, 1, 2);
         
-        instance.editSensorName(name, sensor1);
+        instance.updateSensor(sensor1);
         Sensor sensor = instance.findByName(newName);
         Location location = instance.getManager().find(Location.class, sensor.getId());
         assertNotNull(sensor);

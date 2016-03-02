@@ -58,6 +58,7 @@ import javax.persistence.EntityManager;
 import javax.persistence.EntityManagerFactory;
 import javax.persistence.Persistence;
 import java.util.HashMap;
+import java.util.function.Consumer;
 import javafx.geometry.HPos;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
@@ -230,6 +231,7 @@ public class MainInterfaceController implements Initializable {
         try {
 
             String oldName = sensor.getName();
+            System.out.println(sensor.getId());
             FXMLLoader loader = new FXMLLoader();
             loader.setLocation(WeatherStation.class.getResource(addEditPath));
             Stage dialogStage = createDialogStage("Edit Sensor", loader);
@@ -240,7 +242,18 @@ public class MainInterfaceController implements Initializable {
 
             if (controller.okClicked()) {
                 //Write to database
-                sensorManager.editSensorName(oldName, sensor);
+                sensorManager.updateSensor(sensor);
+                regUpdateSensors.stream().forEach((UpdateThread updateThread) -> {
+                    if (updateThread.getSensor().getId().equals(sensor.getId())) {
+                        updateThread.stop();
+//                        sensorFactory.getThreads().removeIf(sensor.getId().equals(4));
+                    }
+                });
+                sensorFactory.getThreads().stream().forEach((thread)->{
+                    if (thread.getSensor().equals(sensor)) {
+                        thread.stop();
+                    }
+                });
                 writeInfo("Sensor name changed successfully edited!");
             }
         } catch (IOException ex) {
@@ -281,45 +294,14 @@ public class MainInterfaceController implements Initializable {
             dialogStage.showAndWait();
 
             if (controller.isOkClicked()) {
-                String interval = String.valueOf(Integer.valueOf(setting.get("Hour")) * 3600
+                String interval = String.valueOf((Integer.valueOf(setting.get("Hour")) * 3600
                         + Integer.valueOf(setting.get("Minute")) * 60
-                        + Integer.valueOf(setting.get("Second")) * 1000);
+                        + Integer.valueOf(setting.get("Second"))) * 1000);
                 UpdateThread.setUpdateInterval(Integer.parseInt(interval));
 
-                String temp = setting.get("temp");
-                if (temp.equalsIgnoreCase(SensorUnits.TemperatureUnits.CELSIUS.toString())) {
-                    temp = "°c";
-                } else {
-                    temp = "F";
-                }
-                String wind = setting.get("speed");
-                switch (wind) {
-                    case "metres per second":
-                        wind = "m/s";
-                        break;
-                    case "miles per hour":
-                        wind = "mph";
-                        break;
-                    default:
-                        wind = "kmph";
-                }
                 HashMap<String, String> map = new HashMap<>(5);
                 map.put("interval", interval);
-                map.put("humidity", "%");
-                map.put("pressure", "mB");
-                map.put("temperature", temp);
-                map.put("wind", wind);
                 Settings.addRecords(map);
-                List<Reading> todaysReadings = readingManager.getTodaysReadings(currentSelectedList.getSelectionModel().getSelectedItem());
-                populateGraph(currentSelectedList.getSelectionModel().getSelectedItem(), LocalDateTime.now(), todaysReadings);
-                switch (Type.valueOf(currentSelectedList.getSelectionModel().getSelectedItem().getType())) {
-                    case TEMPERATURE:
-                        yAxis.setLabel("Temperature(" + temp + ")");
-                        break;
-                    case WIND_SPEED:
-                        currentSelectedList = speedListView;
-                        yAxis.setLabel("Wind(" + wind + ")");
-                }
             }
         } catch (IOException ex) {
             Logger.getLogger(MainInterfaceController.class.getName()).log(Level.SEVERE, null, ex);
@@ -374,7 +356,12 @@ public class MainInterfaceController implements Initializable {
         //start updateThread for this sensor if not already started
         HashMap<String, String> readRecords = Settings.readRecords();
         if (regUpdateSensors.isEmpty()) {//if empty, add first item
-            UpdateThread updateThread = new UpdateThread(sensor, Integer.parseInt(readRecords.get("interval")), currentValue);//value to change
+            UpdateThread updateThread;
+            try {
+                updateThread = new UpdateThread(sensor, Integer.parseInt(readRecords.get("interval")), currentValue);//value to change
+            } catch (NumberFormatException e) {
+                updateThread = new UpdateThread(sensor, 5000, currentValue);
+            }
             updateThread.setIsVisibleOnChart(true);
             regUpdateSensors.add(updateThread);
             executorService.execute(updateThread);
@@ -532,11 +519,11 @@ public class MainInterfaceController implements Initializable {
                 break;
             case TEMPERATURE:
                 currentSelectedList = tempListView;
-                yAxis.setLabel("Temperature(" + readRecords.get("temperature") + ")");
+                yAxis.setLabel("Temperature(c)");
                 break;
             default:
                 currentSelectedList = speedListView;
-                yAxis.setLabel("Wind(" + readRecords.get("wind") + ")");
+                yAxis.setLabel("Wind(mps)");
         }
     }
 
@@ -581,10 +568,8 @@ public class MainInterfaceController implements Initializable {
         readings.stream().forEach((reading) -> {
             Instant ins = Instant.ofEpochMilli(reading.getRegDate().getTime());
             LocalDateTime datet = LocalDateTime.ofInstant(ins, ZoneId.systemDefault());
-            HashMap<String, String> readRecords = Settings.readRecords();
-            float read = getReadingInUnitOf(sensor, reading, readRecords);
             series.getData().add(new XYChart.Data(String.format("%2d:%2d:%2d", datet.getHour(),
-                    datet.getMinute(), datet.getSecond()), read));
+                    datet.getMinute(), datet.getSecond()), reading.getReadValue()));
         });
     }
 
@@ -641,31 +626,8 @@ public class MainInterfaceController implements Initializable {
              Display it under the tabPane approprate table and make that tab selected
              */
 //            read current sensor value(s)for today from database
-            synchronized (MainInterfaceController.class) {
-                List<Reading> todaysReadings = readingManager.getTodaysReadings(newValue);
-                populateGraph(newValue, LocalDateTime.now(), todaysReadings);
-            }
+            List<Reading> todaysReadings = readingManager.getTodaysReadings(newValue);
+            populateGraph(newValue, LocalDateTime.now(), todaysReadings);
         }
-    }
-
-    public float getReadingInUnitOf(Sensor sensor, Reading reading, HashMap<String, String> readRecords) {
-        float readValue = reading.getReadValue();
-        switch (Type.valueOf(sensor.getType())) {
-            case TEMPERATURE:
-                if (readRecords.get("temperature").equals("F")) {
-                    readValue = SensorUnits.convertTo("fahrenheit", readValue);
-                }
-                break;
-            case WIND_SPEED:
-                switch (readRecords.get("wind")) {
-                    case "mph":
-                        readValue = SensorUnits.convertTo("miles per hour", readValue);
-                        break;
-                    case "kmph":
-                        readValue = SensorUnits.convertTo("kilometres per hour", readValue);
-                        break;
-                }
-        }
-        return readValue;
     }
 }

@@ -35,14 +35,6 @@ public class SettingsController implements Initializable {
     private ComboBox<Integer> min;
     @FXML
     private ComboBox<Integer> seconds;
-    @FXML
-    private ComboBox<String> humidity;
-    @FXML
-    private ComboBox<String> pressure;
-    @FXML
-    private ComboBox<String> temp;
-    @FXML
-    private ComboBox<String> velocity;
 
     private Stage dialogStage;
     private boolean okClicked;
@@ -95,15 +87,10 @@ public class SettingsController implements Initializable {
         settings.put("Hour", hour.getSelectionModel().getSelectedItem().toString());
         settings.put("Minute", min.getSelectionModel().getSelectedItem().toString());
         settings.put("Second", seconds.getSelectionModel().getSelectedItem().toString());
-        velocity.getSelectionModel().getSelectedItem();
-        settings.put("speed", velocity.getSelectionModel().getSelectedItem());
-        temp.getSelectionModel().getSelectedItem();
-        settings.put("temp", temp.getSelectionModel().getSelectedItem());
         okClicked = true;
         dialogStage.close();
     }
 
-    @FXML
     private void cancel() {
         okClicked = false;
         dialogStage.close();
@@ -126,64 +113,23 @@ public class SettingsController implements Initializable {
         seconds.getItems().addAll(time);
         hour.getItems().addAll(0, 1, 2, 3);
 
-        for (HumidityUnits unit : HumidityUnits.values()) {
-            humidity.getItems().add(unit.toString().toLowerCase());
-        }
-        for (TemperatureUnits unit : TemperatureUnits.values()) {
-            temp.getItems().add(unit.toString().toLowerCase());
-        }
-        for (PressureUnits unit : PressureUnits.values()) {
-            pressure.getItems().add(unit.toString().toLowerCase());
-        }
-        for (WindSpeedUnits unit : WindSpeedUnits.values()) {
-            String[] split = unit.toString().split("_");
-            String each = "";
-            for (String split1 : split) {
-                each = each + split1.toLowerCase() + " ";
-            }
-            each = each.trim();
-            velocity.getItems().add(each);
-        }
-
-        pressure.getSelectionModel().select(0);
-        humidity.getSelectionModel().select(0);
-
         HashMap<String, String> readRecords = Settings.readRecords();
         if (!readRecords.isEmpty()) {
-            int interval = Integer.parseInt(readRecords.get("interval"));
-            Integer hours = interval / 3600000;
-            Integer minute = (interval*1000 % 3600) / 60;
-            Integer second = ((interval*1000 % 3600) % 60);
-            String tempS = readRecords.get("temperature");
-            String windS = readRecords.get("wind");
+            int interval = Integer.parseInt(readRecords.get("interval"))/1000;
+            Integer hours = interval / 3600;
+            Integer minute = (interval % 3600) / 60;
+            Integer second = (interval % 3600) % 60;
 
             seconds.getSelectionModel().select(second);
             min.getSelectionModel().select(minute);
             hour.getSelectionModel().select(hours);
-            if (tempS.equals("F")) {
-                temp.getSelectionModel().select(1);
-            } else {
-                temp.getSelectionModel().select(0);
-            }
-            switch (windS) {
-                case "m/s":
-                    velocity.getSelectionModel().select(0);
-                    break;
-                case "mph":
-                    velocity.getSelectionModel().select(1);
-                    break;
-                default:
-                    velocity.getSelectionModel().select(1);
-                    break;
-            }
+
             return;
         }
 
         seconds.getSelectionModel().select(0);
         min.getSelectionModel().select(0);
         hour.getSelectionModel().select(0);
-        temp.getSelectionModel().select(0);
-        velocity.getSelectionModel().select(0);
     }
 
 }
